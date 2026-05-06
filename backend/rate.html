@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rate Dishes — CuisineMap</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #f7f5f0;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: #fff;
+    border-bottom: 1px solid #e8e4dd;
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: -0.02em;
+  }
+
+  .logo span { color: #c8502a; }
+
+  .logout-btn {
+    font-size: 0.85rem;
+    color: #888;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  /* Welcome banner */
+  .welcome {
+    background: #c8502a;
+    color: #fff;
+    padding: 2.5rem 2rem;
+    text-align: center;
+  }
+
+  .welcome h1 {
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+  }
+
+  .welcome p {
+    font-size: 1rem;
+    opacity: 0.88;
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+
+  /* Progress section */
+  .progress-section {
+    background: #fff;
+    border-bottom: 1px solid #e8e4dd;
+    padding: 1.25rem 2rem;
+  }
+
+  .progress-row {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .progress-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 140px;
+  }
+
+  .progress-label {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .progress-bar-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .progress-bar-row {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .bar-label {
+    font-size: 0.78rem;
+    color: #666;
+    min-width: 110px;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 8px;
+    background: #f0ede8;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: #c8502a;
+    border-radius: 999px;
+    transition: width 0.4s ease;
+  }
+
+  .bar-fill.complete { background: #2a7a4a; }
+
+  .bar-count {
+    font-size: 0.78rem;
+    color: #888;
+    min-width: 40px;
+    text-align: right;
+  }
+
+  .unlock-btn {
+    padding: 0.65rem 1.4rem;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    opacity: 0.35;
+    pointer-events: none;
+    transition: opacity 0.3s, background 0.3s;
+  }
+
+  .unlock-btn.ready {
+    opacity: 1;
+    pointer-events: all;
+    background: #2a7a4a;
+  }
+
+  .unlock-btn.ready:hover { background: #1d5c36; }
+
+  /* Cuisine filter tabs */
+  .filter-bar {
+    padding: 1rem 2rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .filter-tab {
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    border: 1.5px solid #d8d4cd;
+    background: #fff;
+    font-size: 0.82rem;
+    cursor: pointer;
+    color: #555;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .filter-tab:hover { border-color: #c8502a; color: #c8502a; }
+  .filter-tab.active { background: #c8502a; border-color: #c8502a; color: #fff; }
+
+  /* Grid */
+  .grid-container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 2rem 3rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  /* Dish card */
+  .dish-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1.5px solid #e8e4dd;
+    overflow: hidden;
+    transition: transform 0.15s, border-color 0.2s;
+    cursor: default;
+  }
+
+  .dish-card:hover { transform: translateY(-2px); border-color: #c8502a44; }
+  .dish-card.rated { border-color: #c8502a; }
+
+  .dish-img {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    background: #f0ede8;
+    display: block;
+  }
+
+  .dish-img-placeholder {
+    width: 100%;
+    height: 130px;
+    background: linear-gradient(135deg, #f0ede8 0%, #e8e4dd 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+  }
+
+  .dish-body {
+    padding: 0.75rem;
+  }
+
+  .dish-cuisine {
+    font-size: 0.7rem;
+    color: #c8502a;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+
+  .dish-name {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    line-height: 1.3;
+    margin-bottom: 0.6rem;
+  }
+
+  /* Stars */
+  .stars {
+    display: flex;
+    gap: 3px;
+  }
+
+  .star {
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: #d8d4cd;
+    transition: color 0.1s, transform 0.1s;
+    line-height: 1;
+    user-select: none;
+  }
+
+  .star:hover { transform: scale(1.2); }
+  .star.lit { color: #f0a500; }
+  .star.preview { color: #f0a500; opacity: 0.6; }
+
+  .rated-badge {
+    display: none;
+    font-size: 0.7rem;
+    color: #2a7a4a;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+
+  .dish-card.rated .rated-badge { display: block; }
+
+  /* Taste profile modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 480px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .modal h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .modal .subtitle {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 1.5rem;
+  }
+
+  .profile-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .profile-cuisine {
+    font-size: 0.9rem;
+    font-weight: 600;
+    min-width: 140px;
+  }
+
+  .profile-bar-track {
+    flex: 1;
+    height: 10px;
+    background: #f0ede8;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .profile-bar-fill {
+    height: 100%;
+    background: #c8502a;
+    border-radius: 999px;
+  }
+
+  .profile-score {
+    font-size: 0.85rem;
+    color: #888;
+    min-width: 28px;
+    text-align: right;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .btn-primary {
+    flex: 1;
+    padding: 0.75rem;
+    background: #c8502a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-primary:hover { background: #a8421e; }
+
+  .btn-secondary {
+    padding: 0.75rem 1.25rem;
+    background: #fff;
+    color: #555;
+    border: 1.5px solid #d8d4cd;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+
+  .btn-secondary:hover { border-color: #999; }
+
+  /* Loading state */
+  .loading {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #888;
+    font-size: 1rem;
+    grid-column: 1 / -1;
+  }
+
+  /* Search */
+  .search-wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0.5rem 2rem 0;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    border: 1.5px solid #e8e4dd;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .search-input:focus { border-color: #c8502a; }
+
+  @media (max-width: 600px) {
+    .progress-row { flex-direction: column; gap: 1rem; }
+    .grid-container { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    .welcome h1 { font-size: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">Cuisine<span>Map</span></div>
+  <a href="/" style="font-size:0.85rem;color:#888;text-decoration:none;">← Back to my plan</a>
+<button class="logout-btn" onclick="logout()">Log out</button>
+</header>
+
+<div class="welcome">
+  <h1>What flavours do you love?</h1>
+  <p>Rate dishes from around the world. The more you rate, the better your weekly plan.</p>
+</div>
+
+<div class="progress-section">
+  <div class="progress-row">
+    <div class="progress-stat">
+      <span class="progress-label">Your progress</span>
+      <span id="progress-text" style="font-size:1.1rem;font-weight:700;color:#1a1a1a;">0 dishes rated</span>
+      <span id="cuisines-text" style="font-size:0.82rem;color:#888;margin-top:2px;">across 0 cuisines</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-row">
+        <span class="bar-label">Dishes (need 10)</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-dishes" style="width:0%"></div></div>
+        <span class="bar-count" id="count-dishes">0/10</span>
+      </div>
+      <div class="progress-bar-row">
+        <span class="bar-label">Cuisines (need 3)</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-cuisines" style="width:0%"></div></div>
+        <span class="bar-count" id="count-cuisines">0/3</span>
+      </div>
+    </div>
+    <button class="unlock-btn" id="unlock-btn" onclick="showProfile()">
+      See my taste profile →
+    </button>
+  </div>
+</div>
+
+<div class="search-wrap">
+  <input class="search-input" type="text" id="search" placeholder="Search dishes..." oninput="renderCards()">
+</div>
+
+<div class="filter-bar" id="filter-bar">
+  <button class="filter-tab active" data-cuisine="All" onclick="setFilter('All', this)">All cuisines</button>
+</div>
+
+<div class="grid-container" id="card-grid">
+  <div class="loading">Loading dishes...</div>
+</div>
+
+<!-- Taste profile modal -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <h2>Your taste profile</h2>
+    <p class="subtitle">Based on your ratings so far</p>
+    <div id="profile-content"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="document.getElementById('modal').classList.remove('show')">Keep rating</button>
+      <button class="btn-primary" onclick="generatePlan()">Generate my plan →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let allDishes = [];
+  let myRatings = {};
+  let activeFilter = 'All';
+
+  async function init() {
+    try {
+      const [dishRes, ratingRes] = await Promise.all([
+        fetch('/api/dishes'),
+        fetch('/api/ratings')
+      ]);
+
+      if (dishRes.status === 401 || ratingRes.status === 401) {
+        window.location.href = '/';
+        return;
+      }
+
+      allDishes = await dishRes.json();
+      const ratings = await ratingRes.json();
+      ratings.forEach(r => { myRatings[r.meal_id] = r.rating; });
+
+      buildFilters();
+      renderCards();
+      updateProgress();
+    } catch (e) {
+      document.getElementById('card-grid').innerHTML = '<div class="loading">Could not load dishes. Is Flask running?</div>';
+    }
+  }
+
+  function buildFilters() {
+    const cuisines = [...new Set(allDishes.map(d => d.cuisine_name))].sort();
+    const bar = document.getElementById('filter-bar');
+    cuisines.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-tab';
+      btn.dataset.cuisine = c;
+      btn.textContent = c;
+      btn.onclick = () => setFilter(c, btn);
+      bar.appendChild(btn);
+    });
+  }
+
+  function setFilter(cuisine, btn) {
+    activeFilter = cuisine;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    renderCards();
+  }
+
+  function renderCards() {
+    const query = document.getElementById('search').value.toLowerCase();
+    let dishes = allDishes;
+
+    if (activeFilter !== 'All') {
+      dishes = dishes.filter(d => d.cuisine_name === activeFilter);
+    }
+    if (query) {
+      dishes = dishes.filter(d =>
+        d.name.toLowerCase().includes(query) ||
+        d.cuisine_name.toLowerCase().includes(query)
+      );
+    }
+
+    const grid = document.getElementById('card-grid');
+    if (dishes.length === 0) {
+      grid.innerHTML = '<div class="loading">No dishes found.</div>';
+      return;
+    }
+
+    grid.innerHTML = dishes.map(d => {
+      const rating = myRatings[d.meal_id] || 0;
+      const isRated = rating > 0;
+      const emoji = getCuisineEmoji(d.cuisine_name);
+      const imgHtml = d.image_url
+        ? `<img class="dish-img" src="${d.image_url}" alt="${d.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        : '';
+      const placeholderStyle = d.image_url ? 'display:none' : '';
+
+      return `
+        <div class="dish-card ${isRated ? 'rated' : ''}" id="card-${d.meal_id}">
+          ${imgHtml}
+          <div class="dish-img-placeholder" style="${placeholderStyle}">${emoji}</div>
+          <div class="dish-body">
+            <div class="dish-cuisine">${d.cuisine_name}</div>
+            <div class="dish-name">${d.name}</div>
+            <div class="stars" id="stars-${d.meal_id}">
+              ${[1,2,3,4,5].map(i => `
+                <span class="star ${i <= rating ? 'lit' : ''}"
+                  data-meal="${d.meal_id}"
+                  data-val="${i}"
+                  onmouseenter="previewStars(${d.meal_id}, ${i})"
+                  onmouseleave="resetStars(${d.meal_id})"
+                  onclick="ratedish(${d.meal_id}, ${i})">&#9733;</span>
+              `).join('')}
+            </div>
+            <div class="rated-badge">✓ Rated</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function previewStars(mealId, val) {
+    const stars = document.querySelectorAll(`#stars-${mealId} .star`);
+    const current = myRatings[mealId] || 0;
+    stars.forEach((s, i) => {
+      s.classList.remove('lit', 'preview');
+      if (i < current) s.classList.add('lit');
+      else if (i < val) s.classList.add('preview');
+    });
+  }
+
+  function resetStars(mealId) {
+    const current = myRatings[mealId] || 0;
+    const stars = document.querySelectorAll(`#stars-${mealId} .star`);
+    stars.forEach((s, i) => {
+      s.classList.remove('lit', 'preview');
+      if (i < current) s.classList.add('lit');
+    });
+  }
+
+  async function ratedish(mealId, rating) {
+    myRatings[mealId] = rating;
+
+    const stars = document.querySelectorAll(`#stars-${mealId} .star`);
+    stars.forEach((s, i) => {
+      s.classList.remove('preview');
+      s.classList.toggle('lit', i < rating);
+    });
+
+    const card = document.getElementById(`card-${mealId}`);
+    if (card) card.classList.add('rated');
+
+    updateProgress();
+
+    try {
+      await fetch('/api/ratings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meal_id: mealId, rating })
+      });
+    } catch(e) {
+      console.error('Failed to save rating', e);
+    }
+  }
+
+  function updateProgress() {
+    const ratedMeals = Object.keys(myRatings).filter(id => myRatings[id] > 0);
+    const ratedCount = ratedMeals.length;
+
+    const cuisinesRated = new Set(
+      ratedMeals.map(id => {
+        const dish = allDishes.find(d => String(d.meal_id) === String(id));
+        return dish ? dish.cuisine_name : null;
+      }).filter(Boolean)
+    );
+    const cuisineCount = cuisinesRated.size;
+
+    document.getElementById('progress-text').textContent = `${ratedCount} dish${ratedCount !== 1 ? 'es' : ''} rated`;
+    document.getElementById('cuisines-text').textContent = `across ${cuisineCount} cuisine${cuisineCount !== 1 ? 's' : ''}`;
+
+    const dishPct = Math.min((ratedCount / 10) * 100, 100);
+    const cuisinePct = Math.min((cuisineCount / 3) * 100, 100);
+
+    const barDishes = document.getElementById('bar-dishes');
+    const barCuisines = document.getElementById('bar-cuisines');
+
+    barDishes.style.width = dishPct + '%';
+    barCuisines.style.width = cuisinePct + '%';
+
+    barDishes.classList.toggle('complete', ratedCount >= 10);
+    barCuisines.classList.toggle('complete', cuisineCount >= 3);
+
+    document.getElementById('count-dishes').textContent = `${Math.min(ratedCount, 10)}/10`;
+    document.getElementById('count-cuisines').textContent = `${Math.min(cuisineCount, 3)}/3`;
+
+    const ready = ratedCount >= 10 && cuisineCount >= 3;
+    document.getElementById('unlock-btn').classList.toggle('ready', ready);
+  }
+
+  function showProfile() {
+    const ratedMeals = Object.keys(myRatings).filter(id => myRatings[id] > 0);
+
+    const cuisineScores = {};
+    ratedMeals.forEach(id => {
+      const dish = allDishes.find(d => String(d.meal_id) === String(id));
+      if (!dish) return;
+      if (!cuisineScores[dish.cuisine_name]) cuisineScores[dish.cuisine_name] = { total: 0, count: 0 };
+      cuisineScores[dish.cuisine_name].total += myRatings[id];
+      cuisineScores[dish.cuisine_name].count += 1;
+    });
+
+    const sorted = Object.entries(cuisineScores)
+      .map(([name, data]) => ({ name, avg: data.total / data.count }))
+      .sort((a, b) => b.avg - a.avg);
+
+    const maxAvg = sorted.length ? sorted[0].avg : 5;
+
+    document.getElementById('profile-content').innerHTML = sorted.map(c => `
+      <div class="profile-row">
+        <span class="profile-cuisine">${c.name}</span>
+        <div class="profile-bar-track">
+          <div class="profile-bar-fill" style="width:${(c.avg/5)*100}%"></div>
+        </div>
+        <span class="profile-score">${c.avg.toFixed(1)} ★</span>
+      </div>
+    `).join('');
+
+    document.getElementById('modal').classList.add('show');
+  }
+
+  function closeModal(e) {
+    if (e.target === document.getElementById('modal')) {
+      document.getElementById('modal').classList.remove('show');
+    }
+  }
+
+  function generatePlan() {
+    window.location.href = '/plan';
+  }
+
+  function logout() {
+    fetch('/api/logout', { method: 'POST' }).then(() => window.location.href = '/');
+  }
+
+  function getCuisineEmoji(cuisine) {
+    const map = {
+      'Italian': '🍝', 'Mexican': '🌮', 'Chinese': '🥢', 'Japanese': '🍱',
+      'Indian': '🍛', 'French': '🥐', 'Thai': '🍜', 'Greek': '🫒',
+      'Spanish': '🥘', 'Moroccan': '🫕', 'Turkish': '🥙', 'Vietnamese': '🍲',
+      'Lebanese': '🧆', 'Jamaican': '🌶️', 'Egyptian': '🫓', 'Russian': '🥟',
+      'Polish': '🥣', 'Portuguese': '🐟', 'Malaysian': '🍲', 'Filipino': '🍖',
+      'Southern & Soul Food': '🍗', 'New England': '🦞', 'Louisiana Creole & Cajun': '🦐',
+      'Tex-Mex & Southwest': '🌵', 'Midwestern': '🌽', 'Pacific Northwest': '🐟'
+    };
+    return map[cuisine] || '🍽️';
+  }
+
+  init();
+</script>
+</body>
+</html>
